@@ -25,7 +25,7 @@ local LastShotTime = 0  -- Timestamp for last shot
 -- **Send Notifications**
 local function Notify(message)
     StarterGui:SetCore("SendNotification", {
-        Title = "⚡ Liam's Triggerbot",
+        Title = "Triggerbot",
         Text = message,
         Duration = 2.5
     })
