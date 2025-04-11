@@ -1,0 +1,106 @@
+local Script = {     
+    Functions = {},     
+    Table = {         
+        Start = {             
+            TriggerBot = {                 
+                Keybind = Enum.KeyCode.Z, -- Toggle Keybind
+                Blacklisted = {"Knife", "Combat", "Fists"}, -- No melee weapons
+                FireRate = 0.03 -- INSTANT FIRE
+            }         
+        }     
+    },     
+    Connections = {} 
+}  
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+local JAIROUGH = false -- Triggerbot active flag
+local LastShotTime = 0  -- Timestamp for last shot
+
+-- **Send Notifications**
+local function Notify(message)
+    StarterGui:SetCore("SendNotification", {
+        Title = "⚡ Liam's Triggerbot",
+        Text = message,
+        Duration = 2.5
+    })
+end
+
+-- **Check If Player is Holding Blacklisted Weapon**
+local function isHoldingKnife()
+    local character = LocalPlayer.Character
+    if not character then return false end
+
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool then
+        for _, blacklistedWeapon in ipairs(Script.Table.Start.TriggerBot.Blacklisted) do
+            if string.find(tool.Name:lower(), blacklistedWeapon:lower()) then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- **Detect Players Under Cursor (Now Works on ALL Body Parts)**
+local function getTargetUnderCursor()
+    local target = Mouse.Target
+    if not target then return nil end
+
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player.Character and target:IsDescendantOf(player.Character) then
+            return player
+        end
+    end
+    return nil
+end
+
+-- **TriggerBot (Shoots Instantly)**
+local function TriggerBot()
+    if JAIROUGH then return end -- Prevent multiple executions
+
+    JAIROUGH = true
+    Notify("✅  triggerbot is on")
+
+    Script.Connections.TriggerBot = RunService.RenderStepped:Connect(function()
+        local currentTime = tick()
+        local targetPlayer = getTargetUnderCursor()
+
+        if targetPlayer and LocalPlayer.Character and not isHoldingKnife() then
+            local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+
+            if tool and tool:FindFirstChild("Handle") then
+                if (currentTime - LastShotTime) >= Script.Table.Start.TriggerBot.FireRate then
+                    LastShotTime = currentTime
+                    tool:Activate()
+                end
+            end
+        end
+    end)
+end
+
+-- **Toggle TriggerBot**
+local function ToggleTriggerBot()
+    if JAIROUGH then
+        JAIROUGH = false
+        Notify("❌  triggerbot is off")
+        if Script.Connections.TriggerBot then
+            Script.Connections.TriggerBot:Disconnect()
+            Script.Connections.TriggerBot = nil
+        end
+    else
+        TriggerBot()
+    end
+end
+
+-- **Keybind Activation**
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if not gameProcessed and input.KeyCode == Script.Table.Start.TriggerBot.Keybind then
+        ToggleTriggerBot()
+    end
+end)
